@@ -655,6 +655,7 @@ namespace Config {
 		Config::set("shown_boxes", new_boxes);
 	}
 
+	// Manually parse the config file  
 	void load(const fs::path& conf_file, vector<string>& load_warnings) {
 		std::error_code error;
 		if (conf_file.empty())
@@ -726,6 +727,7 @@ namespace Config {
 		}
 	}
 
+	// Write to config file
 	void write() {
 		if (conf_file.empty() or not write_new) return;
 		Logger::debug("Writing new config file");

@@ -89,20 +89,26 @@ namespace Input {
 	string old_filter;
 	string input;
 
+	// Checks if there is any stdin new input.
+	// If yes. It sets the global Input::input variable.
+	// returns true if there is new input, false otherwise.
 	bool poll(const uint64_t timeout) {
 		atomic_lock lck(polling);
-		fd_set fds;
-		FD_ZERO(&fds);
-		FD_SET(STDIN_FILENO, &fds);
+		fd_set fds; // File descriptor set.
+		FD_ZERO(&fds); // Clear all fds from the set.
+		FD_SET(STDIN_FILENO, &fds); // set fds to listen for input on stdin
+		// timespect stores a time interval in seconds + nanoseconds
 		struct timespec wait;
 		struct timespec *waitptr = nullptr;
 
+		// initialize the wait variable
 		if(timeout != std::numeric_limits<uint64_t>::max()) {
 			wait.tv_sec = timeout / 1000;
 			wait.tv_nsec = (timeout % 1000) * 1000000;
 			waitptr = &wait;
 		}
 
+		// Check if any of the fds(STDIN) has input available
 		if(pselect(STDIN_FILENO + 1, &fds, nullptr, nullptr, waitptr, &signal_mask) > 0) {
 			input.clear();
 			char buf[1024];
@@ -117,6 +123,9 @@ namespace Input {
 		return false;
 	}
 
+
+	// Parse the raw input event 
+	// If it is a mouse events it also get the mouse_pos and store it in the global mouse_pos variable.
 	string get() {
 		string key = input;
 		if (not key.empty()) {
@@ -203,7 +212,10 @@ namespace Input {
 		// do not need it, actually
 	}
 
+   	// The input is processed here.
+	// Handles all the main keyboard events for the main window
 	void process(const string& key) {
+		// No key press found.
 		if (key.empty()) return;
 		try {
 			auto filtering = Config::getB("proc_filtering");

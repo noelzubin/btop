@@ -391,6 +391,20 @@ namespace Tools {
 
 	static inline void busy_wait (void) {
 	#if defined __i386__ || defined __x86_64__
+		// this is a compiler intrinsic called __builtin_ia32_pause().
+		// In general, compiler intrinsics are special functions that allow
+		// programmers to directly access specific processor instructions or
+		// features that are not available through regular C++ code. These
+		// intrinsics are typically used to optimize performance or to perform
+		// low-level operations.
+		// In this case, __builtin_ia32_pause() is an intrinsic that inserts the
+		// PAUSE instruction into the generated assembly code. The PAUSE
+		// instruction is specific to Intel processors and is used to improve
+		// the performance of spin-wait loops.
+		// A spin-wait loop is a loop that repeatedly checks for a condition
+		// until it becomes true. In such cases, inserting a PAUSE instruction
+		// within the loop can help improve performance by reducing power
+		// consumption and avoiding unnecessary bus traffic.
 		__builtin_ia32_pause();
 	#elif defined __ia64__
 		__asm volatile("hint @pause" : : : "memory");
@@ -406,6 +420,7 @@ namespace Tools {
 	void atomic_wait_for(const atomic<bool>& atom, bool old = true, const uint64_t wait_ms = 0) noexcept;
 
 	//* Sets atomic<bool> to true on construct, sets to false on destruct
+	// RAII for locking/unlocking a atomic<bool>   
 	class atomic_lock {
 		atomic<bool>& atom;
 		bool not_true{};

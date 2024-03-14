@@ -230,6 +230,7 @@ namespace Shared {
 		if (passwd_path.empty())
 			Logger::warning("Could not read /etc/passwd, will show UID instead of username.");
 
+		// Populate coreCount from unistd.h
 		coreCount = sysconf(_SC_NPROCESSORS_ONLN);
 		if (coreCount < 1) {
 			coreCount = sysconf(_SC_NPROCESSORS_CONF);
@@ -323,6 +324,7 @@ namespace Cpu {
 			{"guest_nice", 0}
 	};
 
+	// Get CPU info from /proc/cpuinfo
 	string get_cpuName() {
 		string name;
 		ifstream cpuinfo(Shared::procPath / "cpuinfo");
@@ -390,6 +392,7 @@ namespace Cpu {
 		return name;
 	}
 
+	// get info from /sys/class/hwmon folder
 	bool get_sensors() {
 		bool got_cpu = false, got_coretemp = false;
 		vector<fs::path> search_paths;
@@ -548,6 +551,7 @@ namespace Cpu {
 		}
 	}
 
+	// Get freq from /sys/devices/system/cpu/cpufreq/policy or /proc/cpuinfo
 	string get_cpuHz() {
 		static int failed{};
 
@@ -853,6 +857,7 @@ namespace Cpu {
 		return {percent, watts, seconds, status};
 	}
 
+	// Collect CPU information 
 	auto collect(bool no_update) -> cpu_info& {
 		if (Runner::stopping or (no_update and not current_cpu.cpu_percent.at("total").empty())) return current_cpu;
 		auto& cpu = current_cpu;

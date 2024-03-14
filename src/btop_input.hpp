@@ -38,6 +38,7 @@ using std::string;
 //* Functions and variables for handling keyboard and mouse input
 namespace Input {
 
+	// Store the clickable area of the mouse for each item.  
 	struct Mouse_loc {
 		int line, col, height, width;
 	};

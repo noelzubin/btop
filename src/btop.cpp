@@ -132,6 +132,7 @@ static void print_version_with_build_info() {
 }
 
 //* A simple argument parser
+// Written manually. no libraries. 
 void argumentParser(const int argc, char **argv) {
 	for(int i = 1; i < argc; i++) {
 		const string argument = argv[i];
@@ -395,6 +396,9 @@ void _signal_handler(const int sig) {
 void init_config(){
 	atomic_lock lck(Global::init_conf);
 	vector<string> load_warnings;
+	// cout << "CONFIG DIR: " << Config::conf_dir << std::endl;
+	// This is set to /home/username/.config/btop 
+	// [MAIN] 3. Parse the configuration files
 	Config::load(Config::conf_file, load_warnings);
 	Config::set("lowcolor", (Global::arg_low_color ? true : not Config::getB("truecolor")));
 
@@ -532,6 +536,7 @@ namespace Runner {
 		}
 	}
 
+    // [SECONDARY] 1. Secondary thread starts here
 	//? ------------------------------- Secondary thread: async launcher and drawing ----------------------------------
 	void * _runner(void *) {
 		//? Block some signals in this thread to avoid deadlock from any signal handlers trying to stop this thread
@@ -551,7 +556,9 @@ namespace Runner {
 			stopping = true;
 		}
 
+
 		//* ----------------------------------------------- THREAD LOOP -----------------------------------------------
+		// the loop collects all the metrics and then draws them.  
 		while (not Global::quitting) {
 			thread_wait();
 			atomic_wait_for(active, true, 5000);
@@ -885,6 +892,7 @@ int main(int argc, char **argv) {
 
 	Global::start_time = time_s();
 
+	// [MAIN] 1. Check UID 
 	//? Save real and effective userid's and drop privileges until needed if running with SUID bit set
 	Global::real_uid = getuid();
 	Global::set_uid = geteuid();
@@ -896,6 +904,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	// [MAIN] 2. Parse all arguments and sets Global variable. Also does some basic validations.
 	//? Call argument parser if launched with arguments
 	if (argc > 1) argumentParser(argc, argv);
 
@@ -1013,6 +1022,8 @@ int main(int argc, char **argv) {
 			Logger::debug("Setting LC_ALL=" + found);
 	}
 
+
+	// [MAIN] 4. TUI bits start here.
 	//? Initialize terminal and set options
 	if (not Term::init()) {
 		Global::exit_error_msg = "No tty detected!\nbtop++ needs an interactive shell to run.";
@@ -1059,6 +1070,7 @@ int main(int argc, char **argv) {
 	}
 
 	//? Update list of available themes and generate the selected theme
+	// Get list of all themes from the theme directory.
 	Theme::updateThemes();
 	Theme::setTheme();
 
@@ -1076,6 +1088,8 @@ int main(int argc, char **argv) {
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, &Input::signal_mask);
 
+
+	/// [MAIN] 5. Start the runner thread.
 	//? Start runner thread
 	Runner::thread_sem_init();
 	if (pthread_create(&Runner::runner_id, nullptr, &Runner::_runner, nullptr) != 0) {
@@ -1168,6 +1182,7 @@ int main(int argc, char **argv) {
 				future_time = time_ms() + update_ms;
 			}
 
+			// [MAIN] 6. Input event loop
 			//? Loop over input polling and input action processing
 			for (auto current_time = time_ms(); current_time < future_time; current_time = time_ms()) {
 
